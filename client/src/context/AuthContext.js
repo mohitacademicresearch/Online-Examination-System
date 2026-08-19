@@ -31,8 +31,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-  // Merge in updated fields (e.g. after a profile edit) without needing a
-  // fresh login — keeps the existing token intact.
+  // Updates the user data after profile changes.
   const refreshUser = (updates) => {
     setUser((prev) => {
       const merged = { ...prev, ...updates };

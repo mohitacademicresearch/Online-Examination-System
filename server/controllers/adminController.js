@@ -4,9 +4,7 @@ const Question = require('../models/Question');
 const Submission = require('../models/Submission');
 const ActivityLog = require('../models/ActivityLog');
 
-// @desc    Summary counts + recent activity for the admin dashboard overview
-// @route   GET /api/admin/stats
-// @access  Private/Admin
+// Get admin dashboard statistics
 const getDashboardStats = async (req, res) => {
   try {
     const [totalStudents, totalExams, totalQuestions, totalViolations, examsConductedIds, pendingGrading] = await Promise.all([

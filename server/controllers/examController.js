@@ -2,9 +2,7 @@ const Exam = require('../models/Exam');
 const Question = require('../models/Question');
 const Submission = require('../models/Submission');
 
-// @desc    Create a new exam
-// @route   POST /api/exams
-// @access  Private/Admin
+// Create a new exam
 const createExam = async (req, res) => {
   try {
     const { title, description, duration, passMark, maxViolations, startDate, endDate } = req.body;
@@ -30,9 +28,7 @@ const createExam = async (req, res) => {
   }
 };
 
-// @desc    Update an exam's details
-// @route   PUT /api/exams/:id
-// @access  Private/Admin
+// Update exam details
 const updateExam = async (req, res) => {
   try {
     const exam = await Exam.findById(req.params.id);
@@ -50,9 +46,7 @@ const updateExam = async (req, res) => {
   }
 };
 
-// @desc    Delete an exam (and its questions)
-// @route   DELETE /api/exams/:id
-// @access  Private/Admin
+// Delete exam and its questions
 const deleteExam = async (req, res) => {
   try {
     const exam = await Exam.findById(req.params.id);
@@ -67,9 +61,7 @@ const deleteExam = async (req, res) => {
   }
 };
 
-// @desc    List all exams (admin view)
-// @route   GET /api/exams
-// @access  Private/Admin
+// Get all exams for admin
 const getAllExamsAdmin = async (req, res) => {
   try {
     const exams = await Exam.find().sort({ createdAt: -1 });
@@ -79,10 +71,7 @@ const getAllExamsAdmin = async (req, res) => {
   }
 };
 
-// @desc    List exams a student is currently allowed to see, flagged with
-//          whether they've already submitted each one
-// @route   GET /api/exams/available
-// @access  Private/Student
+// Get available exams for student
 const getAvailableExams = async (req, res) => {
   try {
     const now = new Date();
@@ -107,9 +96,7 @@ const getAvailableExams = async (req, res) => {
   }
 };
 
-// @desc    Get one exam with its questions, for attempting — correct answers stripped
-// @route   GET /api/exams/:id/attempt
-// @access  Private/Student
+// Get exam and questions for student attempt
 const getExamForAttempt = async (req, res) => {
   try {
     const exam = await Exam.findById(req.params.id);

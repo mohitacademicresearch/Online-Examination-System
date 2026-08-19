@@ -2,11 +2,7 @@ const Submission = require('../models/Submission');
 const Question = require('../models/Question');
 const Exam = require('../models/Exam');
 
-// @desc    Submit a completed exam attempt. MCQ answers are auto-graded
-//          immediately; short/long answers are stored ungraded and the
-//          submission is marked pending_review until an admin grades them.
-// @route   POST /api/submissions/:examId
-// @access  Private/Student
+// Submit exam and calculate marks
 const submitExam = async (req, res) => {
   try {
     const { examId } = req.params;
@@ -41,13 +37,12 @@ const submitExam = async (req, res) => {
           score += marksAwarded;
           return { question: q._id, selectedOption: a.selectedOption, marksAwarded };
         }
-        // Subjective — stored for the admin to grade later
+         // Save subjective answer for manual grading
         hasPending = true;
         return { question: q._id, textAnswer: a.textAnswer || '', marksAwarded: null };
       });
 
-    // Any question the student left completely unanswered still counts
-    // toward totalMarks, and (if subjective) still needs review.
+   // Add unanswered questions to the submission
     questions.forEach((q) => {
       if (!answeredIds.has(q._id.toString())) {
         if (q.questionType !== 'mcq') hasPending = true;
@@ -94,9 +89,7 @@ const submitExam = async (req, res) => {
   }
 };
 
-// @desc    Get all submissions for an exam (admin results table)
-// @route   GET /api/submissions/exam/:examId
-// @access  Private/Admin
+// Get all submissions for an exam
 const getSubmissionsByExam = async (req, res) => {
   try {
     const submissions = await Submission.find({ exam: req.params.examId })
@@ -108,9 +101,7 @@ const getSubmissionsByExam = async (req, res) => {
   }
 };
 
-// @desc    Get the logged-in student's own submissions
-// @route   GET /api/submissions/mine
-// @access  Private/Student
+// Get submissions for logged-in student
 const getMySubmissions = async (req, res) => {
   try {
     const submissions = await Submission.find({ student: req.user._id }).populate('exam', 'title passMark');
@@ -120,9 +111,7 @@ const getMySubmissions = async (req, res) => {
   }
 };
 
-// @desc    Get the logged-in student's own result for one specific exam
-// @route   GET /api/submissions/mine/:examId
-// @access  Private/Student
+// Get student result for one exam
 const getMySubmissionForExam = async (req, res) => {
   try {
     const submission = await Submission.findOne({
@@ -153,9 +142,7 @@ const getMySubmissionForExam = async (req, res) => {
   }
 };
 
-// @desc    List every submission still awaiting manual grading, across all exams
-// @route   GET /api/submissions/pending
-// @access  Private/Admin
+// Get submissions waiting for grading
 const getPendingSubmissions = async (req, res) => {
   try {
     const submissions = await Submission.find({ status: 'pending_review' })
@@ -168,10 +155,7 @@ const getPendingSubmissions = async (req, res) => {
   }
 };
 
-// @desc    Full submission detail for grading — includes each question's
-//          text/type and the student's actual answer
-// @route   GET /api/submissions/:id
-// @access  Private/Admin
+// Get submission details for grading
 const getSubmissionDetail = async (req, res) => {
   try {
     const submission = await Submission.findById(req.params.id)
@@ -186,9 +170,7 @@ const getSubmissionDetail = async (req, res) => {
   }
 };
 
-// @desc    Admin assigns marks to the subjective answers in a submission
-// @route   PUT /api/submissions/:id/grade
-// @access  Private/Admin
+// Save marks given by admin
 const gradeSubmission = async (req, res) => {
   try {
     const submission = await Submission.findById(req.params.id);

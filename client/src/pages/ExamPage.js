@@ -21,7 +21,7 @@ const ExamPage = () => {
 
   const [exam, setExam] = useState(null);
   const [loadError, setLoadError] = useState('');
-  const [phase, setPhase] = useState('loading'); // loading | in-progress | submitted
+  const [phase, setPhase] = useState('loading'); // Current exam status
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState({});
   const [secondsLeft, setSecondsLeft] = useState(0);
@@ -37,7 +37,7 @@ const ExamPage = () => {
   const violationCountRef = useRef(0);
   const submittedRef = useRef(false);
   const examRef = useRef(null);
-  const handleSubmitRef = useRef(() => {});
+  const handleSubmitRef = useRef(() => { });
 
   useEffect(() => {
     api
@@ -51,6 +51,7 @@ const ExamPage = () => {
           startedAt = Date.now().toString();
           localStorage.setItem(startKey, startedAt);
         }
+
         const elapsed = Math.floor((Date.now() - Number(startedAt)) / 1000);
         const remaining = Math.max(data.duration * 60 - elapsed, 0);
         setSecondsLeft(remaining);
@@ -59,7 +60,6 @@ const ExamPage = () => {
       .catch((err) => {
         setLoadError(err.response?.data?.message || 'Could not load this exam.');
       });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   useEffect(() => {
@@ -73,7 +73,7 @@ const ExamPage = () => {
     try {
       await document.documentElement.requestFullscreen();
     } catch (err) {
-      // browser may require another manual attempt
+      // Allow user to try fullscreen again
     }
   };
 
@@ -89,7 +89,7 @@ const ExamPage = () => {
         setToasts((prev) => prev.filter((t) => t.id !== toastId));
       }, 4000);
 
-      api.post(`/logs/${id}`, { eventType, description }).catch(() => {});
+      api.post(`/logs/${id}`, { eventType, description }).catch(() => { });
 
       const max = examRef.current?.maxViolations;
       if (max && max > 0 && count >= max) {
@@ -138,7 +138,7 @@ const ExamPage = () => {
 
   useEffect(() => {
     if (phase === 'submitted' && document.fullscreenElement) {
-      document.exitFullscreen().catch(() => {});
+      document.exitFullscreen().catch(() => { });
     }
   }, [phase]);
 
@@ -148,6 +148,7 @@ const ExamPage = () => {
       handleSubmit();
       return undefined;
     }
+
     const interval = setInterval(() => setSecondsLeft((s) => s - 1), 1000);
     return () => clearInterval(interval);
   }, [phase, secondsLeft, handleSubmit]);
@@ -172,7 +173,11 @@ const ExamPage = () => {
             </button>
             <button
               className="dash-btn"
-              style={{ background: 'transparent', color: 'var(--ink)', border: '1.5px solid #d8d5cb' }}
+              style={{
+                background: 'transparent',
+                color: 'var(--ink)',
+                border: '1.5px solid #d8d5cb',
+              }}
               onClick={() => navigate(`/exam/${id}/result`)}
             >
               View My Result
@@ -196,22 +201,38 @@ const ExamPage = () => {
       <div className="exam-screen">
         <div className="exam-result">
           <h1>Exam submitted</h1>
+
           {autoSubmitReason && (
-            <p style={{ color: 'var(--danger)', fontWeight: 600 }}>Auto-submitted: {autoSubmitReason}</p>
+            <p style={{ color: 'var(--danger)', fontWeight: 600 }}>
+              Auto-submitted: {autoSubmitReason}
+            </p>
           )}
+
           <p>{exam.title}</p>
 
           {result.status === 'pending_review' ? (
-            <div className="admin-alert" style={{ background: 'rgba(201,162,39,0.12)', color: 'var(--ink)', marginTop: 16 }}>
-              This exam includes questions that need manual grading. Your final score will be available under
-              "My Exams" once your instructor has reviewed them.
+            <div
+              className="admin-alert"
+              style={{
+                background: 'rgba(201,162,39,0.12)',
+                color: 'var(--ink)',
+                marginTop: 16,
+              }}
+            >
+              This exam includes questions that need manual grading. Your final score will be available
+              under "My Exams" once your instructor has reviewed them.
             </div>
           ) : (
             <>
               <div className="score">
                 {result.score} / {result.totalMarks}
               </div>
-              <p style={{ color: result.passed ? 'var(--success)' : 'var(--danger)', fontWeight: 600 }}>
+              <p
+                style={{
+                  color: result.passed ? 'var(--success)' : 'var(--danger)',
+                  fontWeight: 600,
+                }}
+              >
                 {result.passed ? 'Passed' : 'Not passed'} — pass mark is {result.passMark}%
               </p>
             </>
@@ -222,6 +243,7 @@ const ExamPage = () => {
               {result.violationCount} activity violation(s) were recorded during this attempt.
             </p>
           )}
+
           <button className="dash-btn" onClick={() => navigate('/student-dashboard')}>
             Back to My Exams
           </button>
@@ -237,14 +259,19 @@ const ExamPage = () => {
     <div className="exam-screen">
       <div className="exam-topbar">
         <span>{exam.title}</span>
-        <span className={`exam-timer ${isLow ? 'low' : ''}`}>{formatTime(secondsLeft)}</span>
+        <span className={`exam-timer ${isLow ? 'low' : ''}`}>
+          {formatTime(secondsLeft)}
+        </span>
       </div>
 
       {!isFullscreen ? (
         <div className="fullscreen-lock-overlay">
           <div className="fullscreen-lock-box">
             <h2>You exited fullscreen</h2>
-            <p>This has been recorded as a violation. You must return to fullscreen to continue the exam.</p>
+            <p>
+              This has been recorded as a violation. You must return to fullscreen to continue the
+              exam.
+            </p>
             <button className="dash-btn" onClick={reEnterFullscreen}>
               Return to Fullscreen
             </button>
@@ -257,6 +284,7 @@ const ExamPage = () => {
               Question {currentIndex + 1} of {exam.questions.length}
               {question.maxMarks > 1 && ` · ${question.maxMarks} marks`}
             </div>
+
             <div className="question-text">{question.questionText}</div>
 
             {question.questionType === 'mcq' && (
@@ -264,7 +292,8 @@ const ExamPage = () => {
                 {question.options.map((opt, idx) => (
                   <label
                     key={idx}
-                    className={`option-item ${answers[question._id] === idx ? 'selected' : ''}`}
+                    className={`option-item ${answers[question._id] === idx ? 'selected' : ''
+                      }`}
                   >
                     <input
                       type="radio"
@@ -302,18 +331,30 @@ const ExamPage = () => {
             <div className="question-nav">
               <button
                 className="dash-btn"
-                style={{ background: 'transparent', color: 'var(--ink)', border: '1.5px solid #d8d5cb' }}
+                style={{
+                  background: 'transparent',
+                  color: 'var(--ink)',
+                  border: '1.5px solid #d8d5cb',
+                }}
                 disabled={currentIndex === 0}
                 onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
               >
                 Previous
               </button>
+
               {currentIndex < exam.questions.length - 1 ? (
-                <button className="dash-btn" onClick={() => setCurrentIndex((i) => i + 1)}>
+                <button
+                  className="dash-btn"
+                  onClick={() => setCurrentIndex((i) => i + 1)}
+                >
                   Next
                 </button>
               ) : (
-                <button className="dash-btn" onClick={() => setConfirmOpen(true)} disabled={submitting}>
+                <button
+                  className="dash-btn"
+                  onClick={() => setConfirmOpen(true)}
+                  disabled={submitting}
+                >
                   {submitting ? 'Submitting…' : 'Submit Exam'}
                 </button>
               )}
@@ -322,25 +363,37 @@ const ExamPage = () => {
 
           <div className="palette">
             <h4>Questions</h4>
+
             <div className="palette-grid">
               {exam.questions.map((q, idx) => (
                 <button
                   key={q._id}
-                  className={`palette-item ${isAnswered(answers[q._id]) ? 'answered' : ''} ${
-                    idx === currentIndex ? 'current' : ''
-                  }`}
+                  className={`palette-item ${isAnswered(answers[q._id]) ? 'answered' : ''
+                    } ${idx === currentIndex ? 'current' : ''}`}
                   onClick={() => setCurrentIndex(idx)}
                 >
                   {idx + 1}
                 </button>
               ))}
             </div>
+
             {exam.maxViolations > 0 && (
-              <p style={{ fontSize: '0.76rem', color: 'var(--slate)', marginTop: 10 }}>
+              <p
+                style={{
+                  fontSize: '0.76rem',
+                  color: 'var(--slate)',
+                  marginTop: 10,
+                }}
+              >
                 Violations: {violationCount} / {exam.maxViolations}
               </p>
             )}
-            <button className="submit-exam-btn" onClick={() => setConfirmOpen(true)} disabled={submitting}>
+
+            <button
+              className="submit-exam-btn"
+              onClick={() => setConfirmOpen(true)}
+              disabled={submitting}
+            >
               {submitting ? 'Submitting…' : 'Submit Exam'}
             </button>
           </div>
@@ -356,20 +409,33 @@ const ExamPage = () => {
         </div>
       )}
 
-      {/* In-app confirmation modal — NOT window.confirm(). A native dialog
-          here would force the browser to auto-exit fullscreen and blur the
-          window, which is exactly the bug this replaces. */}
+      {/* Show confirmation before submitting the exam */}
       {confirmOpen && (
         <div className="modal-overlay" onClick={() => setConfirmOpen(false)}>
-          <div className="modal-box" onClick={(e) => e.stopPropagation()} style={{ textAlign: 'center' }}>
+          <div
+            className="modal-box"
+            onClick={(e) => e.stopPropagation()}
+            style={{ textAlign: 'center' }}
+          >
             <h2>Submit your exam?</h2>
+
             <p style={{ color: 'var(--slate)', marginBottom: 20 }}>
               You cannot make changes after this. Make sure you've answered everything you intend to.
             </p>
+
             <div className="modal-actions" style={{ justifyContent: 'center' }}>
-              <button className="dash-btn" style={{ background: 'transparent', color: 'var(--ink)', border: '1.5px solid #d8d5cb' }} onClick={() => setConfirmOpen(false)}>
+              <button
+                className="dash-btn"
+                style={{
+                  background: 'transparent',
+                  color: 'var(--ink)',
+                  border: '1.5px solid #d8d5cb',
+                }}
+                onClick={() => setConfirmOpen(false)}
+              >
                 Cancel
               </button>
+
               <button
                 className="dash-btn"
                 onClick={() => {

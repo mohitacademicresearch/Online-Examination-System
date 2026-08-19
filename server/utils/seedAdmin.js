@@ -1,8 +1,4 @@
-// Run once with: node utils/seedAdmin.js
-// Creates the single admin account from ADMIN_EMAIL / ADMIN_PASSWORD in .env
-// This is the only way an admin account gets created — there is no public
-// admin registration route.
-
+// create the admin account
 require('dotenv').config();
 const mongoose = require('mongoose');
 const User = require('../models/User');

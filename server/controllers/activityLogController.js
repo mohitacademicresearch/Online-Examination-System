@@ -1,8 +1,6 @@
 const ActivityLog = require('../models/ActivityLog');
 
-// @desc    Log a single anti-cheating event during an exam attempt
-// @route   POST /api/logs/:examId
-// @access  Private/Student
+// Save anti-cheating violation log
 const logEvent = async (req, res) => {
   try {
     const { eventType, description } = req.body;
@@ -21,9 +19,7 @@ const logEvent = async (req, res) => {
   }
 };
 
-// @desc    Get all logs for an exam, grouped implicitly by student (admin table)
-// @route   GET /api/logs/exam/:examId
-// @access  Private/Admin
+// Get all violation logs for an exam
 const getLogsByExam = async (req, res) => {
   try {
     const logs = await ActivityLog.find({ exam: req.params.examId })
@@ -35,9 +31,7 @@ const getLogsByExam = async (req, res) => {
   }
 };
 
-// @desc    Get one student's logs for one exam (drill-down view)
-// @route   GET /api/logs/exam/:examId/student/:studentId
-// @access  Private/Admin
+// Get violation logs for one student
 const getLogsForStudent = async (req, res) => {
   try {
     const logs = await ActivityLog.find({
@@ -50,10 +44,7 @@ const getLogsForStudent = async (req, res) => {
   }
 };
 
-// @desc    Per-category violation counts for an exam — overall, and broken
-//          down per student (used for the admin violation-monitoring table)
-// @route   GET /api/logs/exam/:examId/summary
-// @access  Private/Admin
+// Get violation summary and counts
 const getViolationSummary = async (req, res) => {
   try {
     const logs = await ActivityLog.find({ exam: req.params.examId }).populate('student', 'name email');

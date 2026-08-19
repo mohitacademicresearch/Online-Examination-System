@@ -11,9 +11,7 @@ const validateMcqFields = (options, correctOption) => {
   return null;
 };
 
-// @desc    Add a question to an exam (mcq, short, or long answer)
-// @route   POST /api/questions/:examId
-// @access  Private/Admin
+// Add a question to an exam
 const addQuestion = async (req, res) => {
   try {
     const { questionType, questionText, options, correctOption, maxMarks } = req.body;
@@ -48,9 +46,7 @@ const addQuestion = async (req, res) => {
   }
 };
 
-// @desc    Update a question
-// @route   PUT /api/questions/:id
-// @access  Private/Admin
+// Update a question
 const updateQuestion = async (req, res) => {
   try {
     const question = await Question.findById(req.params.id);
@@ -83,9 +79,7 @@ const updateQuestion = async (req, res) => {
   }
 };
 
-// @desc    Delete a question
-// @route   DELETE /api/questions/:id
-// @access  Private/Admin
+// Delete a question
 const deleteQuestion = async (req, res) => {
   try {
     const question = await Question.findById(req.params.id);
@@ -100,9 +94,7 @@ const deleteQuestion = async (req, res) => {
   }
 };
 
-// @desc    Get all questions for an exam, WITH correct answers (admin review)
-// @route   GET /api/questions/:examId
-// @access  Private/Admin
+// Get all questions for an exam
 const getQuestionsByExam = async (req, res) => {
   try {
     const questions = await Question.find({ exam: req.params.examId });

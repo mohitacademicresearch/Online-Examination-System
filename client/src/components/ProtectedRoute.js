@@ -1,8 +1,8 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-// Wrap a page with this to require login, optionally locked to one role.
-// Usage: <ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>
+// Protects pages that require user login.
+// Checks the user role before allowing access.
 const ProtectedRoute = ({ role, children }) => {
   const { user } = useAuth();
 

@@ -1,21 +1,8 @@
 import { useEffect, useRef } from 'react';
 
-const DEBOUNCE_MS = 1000; // backup safety net for genuinely instantaneous repeats (e.g. key auto-repeat)
+const DEBOUNCE_MS = 1000; // Prevents duplicate violation logs
 
-/**
- * Wires up all the native browser APIs used for monitoring an exam attempt:
- * Fullscreen API, Page Visibility API, window blur, clipboard events,
- * right-click, browser refresh (keyboard + toolbar button), back-button
- * trapping, dev-tools shortcuts, and a native "leave this page?" warning.
- *
- * Tab-switch and fullscreen-exit detection are STATE-TRANSITION based
- * rather
- * than time-debounced. This is deterministic regardless of how far apart the
- * browser's own duplicate events fire, which a pure time-debounce can miss.
- *
- * onViolation(eventType, description) is called for every detected event —
- * the caller decides how to log/display it.
- */
+// Handles browser-based anti-cheating features during the exam
 const useAntiCheat = (active, examId, onViolation) => {
   const callbackRef = useRef(onViolation);
   callbackRef.current = onViolation;
@@ -27,7 +14,7 @@ const useAntiCheat = (active, examId, onViolation) => {
   useEffect(() => {
     if (!active) return undefined;
 
-    // Reset transition trackers each time monitoring (re)starts
+    // Reset monitoring values
     wasVisibleRef.current = !document.hidden;
     wasFullscreenRef.current = !!document.fullscreenElement;
 
@@ -38,7 +25,7 @@ const useAntiCheat = (active, examId, onViolation) => {
       callbackRef.current(eventType, description);
     };
 
-    // ---- Tab switch: only logs on the visible -> hidden transition ----
+    // Detect tab switching
     const handleVisibilityChange = () => {
       const hidden = document.hidden;
       if (hidden && wasVisibleRef.current) {
@@ -47,18 +34,14 @@ const useAntiCheat = (active, examId, onViolation) => {
       wasVisibleRef.current = !hidden;
     };
 
-    // Window blur is a fallback signal for focus loss that ISN'T already a
-    // tab switch (e.g. alt-tabbing to another app while this tab technically
-    // stays "visible" in some browsers). If the tab is already hidden, the
-    // visibilitychange handler above already logged it — skip here so the
-    // same physical action never counts twice.
+    // Detect browser focus loss
     const handleBlur = () => {
       if (!document.hidden) {
         report('TAB_SWITCH', 'Browser window lost focus');
       }
     };
 
-    // ---- Fullscreen exit: only logs on the fullscreen -> not transition ----
+    // Detect fullscreen exit
     const handleFullscreenChange = () => {
       const isFs = !!document.fullscreenElement;
       if (!isFs && wasFullscreenRef.current) {
@@ -67,36 +50,38 @@ const useAntiCheat = (active, examId, onViolation) => {
       wasFullscreenRef.current = isFs;
     };
 
+    // Block right-click
     const handleContextMenu = (e) => {
       e.preventDefault();
       report('RIGHT_CLICK', 'Right-click attempted');
     };
 
+    // Block copy attempt
     const handleCopy = (e) => {
       e.preventDefault();
       report('COPY_ATTEMPT', 'Copy attempted');
     };
 
+    // Block paste attempt
     const handlePaste = (e) => {
       e.preventDefault();
       report('PASTE_ATTEMPT', 'Paste attempted');
     };
 
+    // Block cut attempt
     const handleCut = (e) => {
       e.preventDefault();
       report('CUT_ATTEMPT', 'Cut attempted');
     };
 
+    // Detect keyboard shortcuts
     const handleKeyDown = (e) => {
       const key = e.key.toLowerCase();
       const ctrlOrCmd = e.ctrlKey || e.metaKey;
 
-      // C/V/X are deliberately NOT blocked here. Blocking them at keydown
-      // would prevent the browser from ever firing the actual copy/paste/cut
-      // events below — which is where the real blocking AND logging happens.
-      // Intercepting both places was silently swallowing the violation log.
+      // Copy, paste and cut are handled by browser events
 
-      // Dev tools shortcuts, including view-source
+      // Block developer tool shortcuts
       if (key === 'f12' || (ctrlOrCmd && e.shiftKey && ['i', 'j', 'c'].includes(key))) {
         e.preventDefault();
         report('DEV_TOOLS_ATTEMPT', `Blocked shortcut: ${key === 'f12' ? 'F12' : `Ctrl+Shift+${key.toUpperCase()}`}`);
@@ -108,13 +93,14 @@ const useAntiCheat = (active, examId, onViolation) => {
         return;
       }
 
-      // Keyboard refresh
+      // Block keyboard refresh
       if (key === 'f5' || (ctrlOrCmd && key === 'r')) {
         e.preventDefault();
         report('REFRESH_ATTEMPT', `Blocked shortcut: ${key === 'f5' ? 'F5' : 'Ctrl+R'}`);
         return;
       }
 
+      // Block other keyboard shortcuts
       if (ctrlOrCmd && key === 'a') {
         e.preventDefault();
         report('KEY_SHORTCUT', 'Blocked shortcut: Ctrl+A (select all)');
@@ -127,10 +113,7 @@ const useAntiCheat = (active, examId, onViolation) => {
       }
     };
 
-    // Best-effort logging for actions we can detect but can't fully prevent
-    // in code — clicking the browser's own Refresh button, or closing the
-    // tab. Uses fetch with keepalive so the request has a real chance to
-    // reach the server even as the page unloads.
+    // Log refresh or page close attempts
     const logBeacon = (eventType, description) => {
       try {
         const stored = localStorage.getItem('examAppUser');
@@ -146,13 +129,11 @@ const useAntiCheat = (active, examId, onViolation) => {
           keepalive: true,
         }).catch(() => {});
       } catch (err) {
-        // best-effort only — never block page unload over this
+        // Ignore errors while leaving the page
       }
     };
 
-    // Shows the browser's native "leave this page?" dialog and logs the
-    // attempt. This is what catches the toolbar Refresh button and tab
-    // close/navigate-away — none of which fire a normal keydown event.
+    // Warn before leaving or refreshing the exam page
     const handleBeforeUnload = (e) => {
       logBeacon('REFRESH_ATTEMPT', 'Page refresh/close attempted via browser UI');
       e.preventDefault();
@@ -160,14 +141,14 @@ const useAntiCheat = (active, examId, onViolation) => {
       return '';
     };
 
-    // Traps the browser Back button: immediately re-pushes the current URL
-    // so navigation is cancelled, and logs the attempt.
+    // Prevent browser back button
     window.history.pushState(null, '', window.location.href);
     const handlePopState = () => {
       window.history.pushState(null, '', window.location.href);
       report('REFRESH_ATTEMPT', 'Back button pressed');
     };
 
+    // Add event listeners
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('blur', handleBlur);
     document.addEventListener('fullscreenchange', handleFullscreenChange);
@@ -179,6 +160,7 @@ const useAntiCheat = (active, examId, onViolation) => {
     window.addEventListener('beforeunload', handleBeforeUnload);
     window.addEventListener('popstate', handlePopState);
 
+    // Remove event listeners
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('blur', handleBlur);

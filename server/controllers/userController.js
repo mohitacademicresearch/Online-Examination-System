@@ -6,9 +6,7 @@ const generateToken = require('../utils/generateToken');
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const isValidEmail = (email) => EMAIL_REGEX.test(String(email || '').trim());
 
-// @desc    Register a new student
-// @route   POST /api/users/register
-// @access  Public
+// Register a new student
 const registerStudent = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -42,9 +40,7 @@ const registerStudent = async (req, res) => {
   }
 };
 
-// @desc    Login (shared by student and admin login forms)
-// @route   POST /api/users/login
-// @access  Public
+// Login for student and admin
 const loginUser = async (req, res) => {
   try {
     const { email, password, expectedRole } = req.body;
@@ -70,16 +66,12 @@ const loginUser = async (req, res) => {
   }
 };
 
-// @desc    Get logged-in user's profile
-// @route   GET /api/users/profile
-// @access  Private
+// Get logged-in user profile
 const getProfile = async (req, res) => {
   res.json(req.user);
 };
 
-// @desc    List all registered students
-// @route   GET /api/users/students
-// @access  Private/Admin
+// Get all registered students
 const getAllStudents = async (req, res) => {
   try {
     const students = await User.find({ role: 'student' }).select('-password').sort({ createdAt: -1 });
@@ -89,9 +81,7 @@ const getAllStudents = async (req, res) => {
   }
 };
 
-// @desc    Admin creates a student account directly
-// @route   POST /api/users/students
-// @access  Private/Admin
+// Create a student account
 const createStudent = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -115,9 +105,7 @@ const createStudent = async (req, res) => {
   }
 };
 
-// @desc    Admin updates a student's name/email (and optionally password)
-// @route   PUT /api/users/students/:id
-// @access  Private/Admin
+// Update student detail
 const updateStudent = async (req, res) => {
   try {
     const student = await User.findOne({ _id: req.params.id, role: 'student' });
@@ -150,11 +138,7 @@ const updateStudent = async (req, res) => {
   }
 };
 
-// @desc    Admin deletes a student account, along with their submissions
-//          and activity logs (so no orphaned data shows up elsewhere —
-//          e.g. Results, Recently Completed Exams, Activity Logs)
-// @route   DELETE /api/users/students/:id
-// @access  Private/Admin
+// Delete student and related exam data
 const deleteStudent = async (req, res) => {
   try {
     const student = await User.findOne({ _id: req.params.id, role: 'student' });
@@ -170,9 +154,7 @@ const deleteStudent = async (req, res) => {
   }
 };
 
-// @desc    Logged-in user updates their own name and/or password
-// @route   PUT /api/users/profile
-// @access  Private
+// Delete student and related exam data
 const updateProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
